@@ -4,7 +4,7 @@ description: >-
   專業生成符合「新北市立錦和高中」及台灣中學段考規範之自然科/理化科試題卷與答案解析卷。
   深度融合國家教育研究院「素養導向紙筆測驗要素」、臺師大心測中心「國中科學素養命題架構」及「PISA 2025 科學評量架構」。
   涵蓋 Bloom 認知層次與科學探究六步驟(I1~I6)、情境素養題組、Python 自動繪製 300 DPI 考卷向量插圖，
-  以及排版標準的雙份 Word (.docx) 檔產生規範（全卷 11 點字、題號凸排、1cm 邊界、最節省空間之原生文繞圖排版、A4/B4 設定與動態頁尾）。
+  以及排版標準的雙份 Word (.docx) 檔產生規範（全卷 11 點字、題號凸排、1cm 邊界、最節省空間之原生文繞圖排版、A4/B4 設定、動態頁尾、全卷 100% 零 LaTeX $ 標籤殘留；不需產生 PDF 與檢核表）。
 ---
 
 # 國高中自然科命題規範與自動化產卷技能 (jhsh-science-exam-generator)
@@ -41,15 +41,15 @@ flowchart TD
     B --> C[檢視 references/science_anti_out_of_bounds.md: 排除超綱禁用詞 如『斜率』]
     C --> D[呼叫 scripts/science_plotter.py: 產出 300 DPI +8Pt 黑白灰階向量插圖]
     D --> E[呼叫 scripts/science_chem_math_omml.py: 化學式/物態/單位轉 Word 原生 OMML]
-    E --> F[呼叫 scripts/docx_science_builder.py: 產出雙份 Word 試題與解析卷]
-    F --> G[呼叫 scripts/science_verifier.py: 執行配分100/連續題號/選項平衡/防超綱自檢]
+    E --> F[呼叫 scripts/docx_science_builder.py: 產出雙份 Word 試題與解析卷（不需 PDF / 不需檢核表）]
+    F --> G[呼叫 scripts/science_verifier.py: 執行配分100/連續題號/選項平衡/防超綱/零$標籤自檢]
 ```
 
 ### 1. 執行輔助腳本庫 (`scripts/`)
-- [`docx_science_builder.py`](file:///C:/Users/genie/.gemini/config/skills/jhsh-science-exam-generator/scripts/docx_science_builder.py)：封裝 1cm 頁邊界、全卷 11 點標楷體、粗體底線抬頭、扣 5 分警語、題號凸排、右側浮動矩形文繞圖（`wrapSquare`，節省 40%~50% 版面）與動態頁碼 `〔第 X 頁，共 Y 頁〕`。
+- [`docx_science_builder.py`](file:///C:/Users/genie/.gemini/config/skills/jhsh-science-exam-generator/scripts/docx_science_builder.py)：封裝 1cm 頁邊界、全卷 11 點標楷體、粗體底線抬頭、扣 5 分警語、題號凸排、右側浮動矩形文繞圖（`wrapSquare`，節省 40%~50% 版面）與動態頁碼 `〔第 X 頁，共 Y 頁〕`，並內建 `clean_latex_to_text()` 物理變數與化學式標籤全域自動清洗機制。
 - [`science_chem_math_omml.py`](file:///C:/Users/genie/.gemini/config/skills/jhsh-science-exam-generator/scripts/science_chem_math_omml.py)：處理化學式上下標、反應箭頭、物態標記、同位素與科學單位之 Word 原生可編輯 OMML `<m:oMath>`。
 - [`science_plotter.py`](file:///C:/Users/genie/.gemini/config/skills/jhsh-science-exam-generator/scripts/science_plotter.py)：繪製 M-V 質量體積關係圖、上皿天平、量筒截距、橫波波形與氣體裝置之 300 DPI 高清黑白向量圖（符合 +8 Pt 特大字級標準 16.5~21 Pt）。
-- [`science_verifier.py`](file:///C:/Users/genie/.gemini/config/skills/jhsh-science-exam-generator/scripts/science_verifier.py)：自動化檢核試卷總分等於 100 分、題號連續性、選項配比平衡度與超綱禁忌詞清單。
+- [`science_verifier.py`](file:///C:/Users/genie/.gemini/config/skills/jhsh-science-exam-generator/scripts/science_verifier.py)：自動化檢核試卷總分等於 100 分、題號連續性、選項配比平衡度、超綱禁忌詞清單，以及全卷零 LaTeX `$` 標籤驗證。
 
 ### 2. 課綱與評量參考庫 (`references/`)
 - [`curriculum_science_inquiry.md`](file:///C:/Users/genie/.gemini/config/skills/jhsh-science-exam-generator/references/curriculum_science_inquiry.md)：108 自然科學領域核心素養（自-J）、科學探究與問題解決六歷程（I1~I6）與 Bloom 認知階層。
@@ -78,6 +78,16 @@ flowchart TD
    - 圖片標題 19.5~21 Pt、物件代號 18~19.5 Pt、刻度 16.5~17.5 Pt、尺寸標註 17~18.5 Pt。
 6. **最後一頁控制**：最後一頁內容絕對不可少於整頁的 1/3。
 7. **動態頁碼**：頁尾置中加入 Word 動態欄位代碼：`〔第 X 頁，共 Y 頁〕`。
+8. **物理數學變數與化學符號排版規範（100% 零 LaTeX `$` 標籤殘留）**：
+   - 題目題幹、選項、閱讀短文引導與詳細解析中，**嚴禁出現任何原始 `$` 或 `$$` 錢字號標籤**（如 `$V$`、`$M$`、`$f$`、`$D = M / V$` 等）。
+   - 物理變數一律以乾淨的英數字元或斜體呈現（如體積 V、質量 M、頻率 f、波長 λ、密度 D = M / V），禁止直接將 LaTeX 標籤寫入 Word 段落。
+   - 化學式與反應箭頭一律以標準 Unicode 呈現（如 H₂O、CO₂、CaCO₃、→）。
+   - 腳本庫於文字寫入 Word 前必須全數呼叫 `clean_latex_to_text(text)` 進行攔截清洗。
+9. **檔案輸出規範（雙份 Word 檔，免 PDF 與檢核表）**：
+   - 僅產出 **2 個獨立 Word (.docx) 檔案**：
+     1. `[學期][年級][科目]段[次]試題.docx`（正式試題卷）
+     2. `[學期][年級][科目]段[次]答案卷與解析.docx`（含快速核對卡號表格與雙向度詳細題解）
+   - **明確不需產生 PDF 檔，亦不需額外產生命題及審題檢核表**。
 
 ---
 
@@ -94,4 +104,5 @@ flowchart TD
 - [ ] 附圖試題是否採用右側浮動文繞圖（wrapSquare，寬度 2.6~2.8 英吋）？
 - [ ] 全卷正文、選項、解析是否嚴格維持 11 點字 (11 Pt)？題幹末尾是否標註【X-Y】章節編號？
 - [ ] 試卷最後一頁版面是否大於 1/3 頁？
-- [ ] 是否產出獨立三份檔案：試題卷、答案與解析卷、命題審題檢核表？
+- [ ] 全卷是否 100% 徹底清除所有 LaTeX `$` 標籤？物理變數（V, M, f）與化學式（H₂O, CO₂）是否為乾淨純字元？
+- [ ] 是否僅產出雙份 Word 檔案（試題卷 .docx、答案與解析卷 .docx），無產生多餘 PDF 與檢核表？

@@ -19,6 +19,33 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 
+def clean_latex_to_text(text):
+    """
+    徹底清除任何 LaTeX $ 符號與標籤，轉換為乾淨的中學試卷純文字與 Unicode 符號
+    嚴格避免在中學考卷 Word 文件中出現 $V$, $M$, $f$ 等排版符號。
+    """
+    if not text:
+        return ""
+    import re
+    t = str(text)
+    # 常見箭頭與推論符號
+    t = t.replace(r"$\rightarrow$", "→").replace(r"\rightarrow", "→")
+    t = t.replace(r"$\implies$", "，即 ").replace(r"\implies", "，即 ")
+    # 常用希臘字母與化學下標
+    t = t.replace(r"$\lambda$", "λ").replace(r"\lambda", "λ")
+    t = t.replace(r"$H_2O$", "H₂O").replace(r"H_2O", "H₂O")
+    t = t.replace(r"$CO_2$", "CO₂").replace(r"CO_2", "CO₂")
+    t = t.replace(r"$O_2$", "O₂").replace(r"O_2", "O₂")
+    t = t.replace(r"$N_2$", "N₂").replace(r"N_2", "N₂")
+    t = t.replace(r"$NH_3$", "NH₃").replace(r"NH_3", "NH₃")
+    t = t.replace(r"$CaCO_3$", "CaCO₃").replace(r"CaCO_3", "CaCO₃")
+    t = t.replace(r"$Ca(OH)_2$", "Ca(OH)₂").replace(r"Ca(OH)_2", "Ca(OH)₂")
+    # 清洗 $X$ 變數為 X (如 $V$ -> V, $M$ -> M, $f$ -> f, $D$ -> D)
+    t = re.sub(r'\$([A-Za-z0-9\s\+\-\*\/\=\.\,\(\)\_\^]+)\$', r'\1', t)
+    # 移除任何剩餘的單獨 $ 符號
+    t = t.replace('$', '')
+    return t
+
 def set_base_style(doc):
     """設定試卷基礎樣式：1cm 邊界與 11 點標楷體/Times New Roman"""
     for s in doc.sections:
@@ -188,7 +215,9 @@ def add_question(doc, num, text, options=None, img_path=None, img_width=Inches(2
     - 若有圖片，採用右側浮動矩形文繞圖
     - 緊隨其後加入選項
     """
-    p = doc.add_paragraph()
+    text = clean_latex_to_text(text)
+    if options:
+        options = [clean_latex_to_text(o) for o in options]
     p.paragraph_format.left_indent = Inches(0.28)
     p.paragraph_format.first_line_indent = Inches(-0.28) # 凸排
     p.paragraph_format.line_spacing = 1.15

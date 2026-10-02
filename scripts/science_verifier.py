@@ -88,6 +88,15 @@ def verify_anti_out_of_bounds(text):
             found.append(f"【超綱警告】偵測到禁忌詞『{term}』：{reason}")
     return (len(found) == 0, found)
 
+def verify_no_raw_dollar_signs(text):
+    """檢核文本中是否殘留 LaTeX $ 符號與標籤"""
+    if not text:
+        return (True, [])
+    dollar_count = text.count('$')
+    if dollar_count > 0:
+        return (False, [f"【排版警告】偵測到試卷中殘留 {dollar_count} 個 LaTeX $ 標籤，請呼叫 clean_latex_to_text() 徹底清洗！"])
+    return (True, [])
+
 def run_all_checks(exam_data):
     """
     執行全面檢核
@@ -114,6 +123,10 @@ def run_all_checks(exam_data):
     # 4. 超綱檢查
     ok_bounds, errs_bounds = verify_anti_out_of_bounds(exam_data.get('full_text', ''))
     results['bounds'] = {'pass': ok_bounds, 'errors': errs_bounds}
+
+    # 5. 零 LaTeX $ 符號檢核
+    ok_dollars, errs_dollars = verify_no_raw_dollar_signs(exam_data.get('full_text', ''))
+    results['dollars'] = {'pass': ok_dollars, 'errors': errs_dollars}
     
-    all_passed = ok_score and ok_num and ok_opt and ok_bounds
+    all_passed = ok_score and ok_num and ok_opt and ok_bounds and ok_dollars
     return all_passed, results
