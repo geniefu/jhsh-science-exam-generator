@@ -218,6 +218,7 @@ def add_question(doc, num, text, options=None, img_path=None, img_width=Inches(2
     text = clean_latex_to_text(text)
     if options:
         options = [clean_latex_to_text(o) for o in options]
+    p = doc.add_paragraph()
     p.paragraph_format.left_indent = Inches(0.28)
     p.paragraph_format.first_line_indent = Inches(-0.28) # 凸排
     p.paragraph_format.line_spacing = 1.15
